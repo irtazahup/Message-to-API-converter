@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 # Replace 'your_api_key_here' with the key you just copied
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+print(os.getenv("GROQ_API_KEY"))
 
 def extract_carpool_info(user_message):
     system_prompt = """

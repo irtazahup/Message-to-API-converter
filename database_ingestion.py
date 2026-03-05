@@ -8,7 +8,7 @@ SUPABASE_URL=os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY=os.getenv("SUPABASE_ANON_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
-
+print(f"Supabase Client Created: {SUPABASE_ANON_KEY}")
 # sample_raw=extract_carpool_info("Heading to the mall at 5pm, 2 seats free")
 
 # sample = json.loads(sample_raw)
