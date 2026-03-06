@@ -9,14 +9,14 @@ load_dotenv(dotenv_path=Path(__file__).resolve().with_name(".env"))
 # Your Green API credentials (replace with your actual values)
 ID_INSTANCE = os.getenv("idInstance")
 API_TOKEN_INSTANCE = os.getenv("apiTokenInstance")
-
+CHAT_NUM=os.getenv("CHAT_NUM")
 
 print(f"ID_INSTANCE: {ID_INSTANCE}")
 print(f"API_TOKEN_INSTANCE: {API_TOKEN_INSTANCE}")
 # The recipient's phone number with country code, followed by "@c.us"
 # Example: "79876543210@c.us"
-CHAT_ID = "923118375964@c.us" 
-MESSAGE_TEXT = "Hello from Green API!"
+CHAT_ID = CHAT_NUM + "@c.us"
+MESSAGE_TEXT = "phir phir"
 
 # The API URL for the sendMessage method
 url = f"https://api.green-api.com/waInstance{ID_INSTANCE}/sendMessage/{API_TOKEN_INSTANCE}"
