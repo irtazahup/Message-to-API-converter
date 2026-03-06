@@ -1,44 +1,79 @@
+import asyncio
+import os
 import requests
-import json
-import os 
-from pathlib import Path
 from dotenv import load_dotenv
+from supabase import create_async_client, AsyncClient
 
-load_dotenv(dotenv_path=Path(__file__).resolve().with_name(".env"))
+load_dotenv()
 
-# Your Green API credentials (replace with your actual values)
+# Credentials
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 ID_INSTANCE = os.getenv("idInstance")
 API_TOKEN_INSTANCE = os.getenv("apiTokenInstance")
-CHAT_NUM=os.getenv("CHAT_NUM")
+CHAT_NUM = os.getenv("CHAT_NUM")
+CHAT_ID = f"{CHAT_NUM}@c.us"
 
-print(f"ID_INSTANCE: {ID_INSTANCE}")
-print(f"API_TOKEN_INSTANCE: {API_TOKEN_INSTANCE}")
-# The recipient's phone number with country code, followed by "@c.us"
-# Example: "79876543210@c.us"
-CHAT_ID = CHAT_NUM + "@c.us"
-MESSAGE_TEXT = "phir phir"
+def send_whatsapp_message(text):
+    url = f"https://api.green-api.com{ID_INSTANCE}/sendMessage/{API_TOKEN_INSTANCE}"
+    payload = {"chatId": CHAT_ID, "message": text}
+    try:
+        response = requests.post(url, json=payload)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"Green API Error: {e}")
+        return False
 
-# The API URL for the sendMessage method
-url = f"https://api.green-api.com/waInstance{ID_INSTANCE}/sendMessage/{API_TOKEN_INSTANCE}"
+async def handle_insert(payload, supabase: AsyncClient):
+    # Data is inside the 'new' key for INSERT events
+    new_row = payload.get('new', {})
+    row_id = new_row.get('id')
+    
+    if not row_id:
+        return
 
-# The payload for the POST request
-payload = json.dumps({
-  "chatId": CHAT_ID,
-  "message": MESSAGE_TEXT
-})
+    message_text = (
+        "*NEW MESSAGE FROM CARPOOL-BOT*\n\n"
+        f"From: {new_row.get('sender_number')}\n"
+        f"Type: {new_row.get('type')}\n"
+        f"Source: {new_row.get('source')}\n"
+        f"Destination: {new_row.get('destination')}\n"
+        f"Time: {new_row.get('time')}\n"
+        f"Seats: {new_row.get('seats')}"
+    )
 
-# The headers for the POST request
-headers = {
-  'Content-Type': 'application/json'
-}
+    print(f"Processing row {row_id}...")
 
-try:
-    # Send the request
-    response = requests.request("POST", url, headers=headers, data=payload)
-    print('successfull')
-    # Print the response
-    print(response.text)
+    if send_whatsapp_message(message_text):
+        # Update row status to True
+        await supabase.table("carpool_entries").update({"status": True}).eq("id", row_id).execute()
+        print(f"Success: Row {row_id} updated.")
 
-except requests.exceptions.RequestException as e:
-    print(f"An error occurred: {e}")
+async def main():
+    # 1. Initialize Async Client
+    supabase: AsyncClient = await create_async_client(SUPABASE_URL, SUPABASE_KEY)
 
+    # 2. Setup the channel
+    channel = supabase.channel("db-changes")
+    
+    # 3. Use the correct method: on_postgres_changes
+    channel.on_postgres_changes(
+        event="INSERT",
+        schema="public",
+        table="carpool_entries",
+        callback=lambda payload: asyncio.create_task(handle_insert(payload, supabase))
+    )
+    
+    # 4. Subscribe to start receiving events
+    await channel.subscribe()
+
+    print("Listener active. Waiting for new carpool entries...")
+    
+    try:
+        while True:
+            await asyncio.sleep(1)
+    except KeyboardInterrupt:
+        print("\nStopping...")
+
+if __name__ == "__main__":
+    asyncio.run(main())
