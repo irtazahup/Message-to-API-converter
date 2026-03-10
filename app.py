@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from brain import extract_carpool_info # Your Sprint 1 logic
 from database_ingestion import save_to_supabase  # Wrap your Sprint 2 code in a function
+import json 
 
 app = Flask(__name__)
 
@@ -28,9 +29,11 @@ def whatsapp_webhook():
             try:
                 # Use your existing logic here
                 raw_ai_output = extract_carpool_info(message_text)
-                if raw_ai_output.strip() != "Not important":
+                # 2. Parse the string into a dictionary immediately
+                data_conv = json.loads(raw_ai_output)
+                if data_conv.get("status") != "ignored":
                     
-                    save_to_supabase(raw_ai_output, sender_number)
+                    save_to_supabase(data_conv, sender_number)
                     # ... save to supabase ...
                     print("🚀 Successfully processed!")
             except Exception as ai_err:

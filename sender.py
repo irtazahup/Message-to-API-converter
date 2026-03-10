@@ -15,7 +15,7 @@ CONTACT_NUMBER = os.getenv("CHAT_NUM")# The number you want to send messages to 
 
 
 def send_whatsapp(number, text):
-    print(f"📤 Sending to {number}: {text}")
+    # print(f"📤 Sending to {number}: {text}")
     """Sends a message via Green-API (Keep this sync or make it async)"""
     url = f"https://7103.api.greenapi.com/waInstance{ID_INSTANCE}/sendMessage/{API_TOKEN}"
     if "@c.us" not in str(number):
@@ -26,7 +26,7 @@ def send_whatsapp(number, text):
     
     try:
         response = requests.post(url, json=payload, headers=headers)
-        print(f"🚀 Sent to {number}: {response.status_code}")
+        # print(f"🚀 Sent to {number}: {response.status_code}")
     except Exception as e:
         print(f"❌ Green-API Error: {e}")
 
@@ -37,7 +37,7 @@ def on_insert(payload):
     
     # 2. Extract the record. Python SDK typically uses 'record' for INSERTs
     # but some versions/configs use 'new'
-    print(f"DEBUG - Full Payload: {payload}")
+    # print(f"DEBUG - Full Payload: {payload}")
     
     # 1. Access the 'data' key first, then 'record'
     data = payload.get('data', {})
