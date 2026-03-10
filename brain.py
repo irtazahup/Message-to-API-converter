@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 # Replace 'your_api_key_here' with the key you just copied
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-print(os.getenv("GROQ_API_KEY"))
+# print(os.getenv("GROQ_API_KEY"))
 
 def extract_carpool_info(user_message):
     system_prompt = """
@@ -33,16 +33,16 @@ def extract_carpool_info(user_message):
     
     return chat_completion.choices[0].message.content
 
-if __name__ == "__main__":
-# # --- Testing Phase ---
-    test_messages = [
-        "Heading to the mall at 5pm, 2 seats free",
-        "Anyone going to the airport tomorrow morning around 8am? Need a lift.",
-        "Offer: Ride from Downtown to Tech Park at 09:00. 3 spots left!",
-        "I need a ride to the stadium tonight at 7."
-    ]
+# if __name__ == "__main__":
+# # # --- Testing Phase ---
+#     test_messages = [
+#         "Heading to the mall at 5pm, 2 seats free",
+#         "Anyone going to the airport tomorrow morning around 8am? Need a lift.",
+#         "Offer: Ride from Downtown to Tech Park at 09:00. 3 spots left!",
+#         "I need a ride to the stadium tonight at 7."
+#     ]
 
-    for msg in test_messages:
-        print(f"Message: {msg}")
-        print(f"Extracted JSON: {extract_carpool_info(msg)}")
-        print("-" * 30)
+#     for msg in test_messages:
+#         print(f"Message: {msg}")
+#         print(f"Extracted JSON: {extract_carpool_info(msg)}")
+#         print("-" * 30)

@@ -1,79 +1,85 @@
-import asyncio
 import os
+import asyncio
 import requests
+from supabase import acreate_client, AsyncClient
 from dotenv import load_dotenv
-from supabase import create_async_client, AsyncClient
 
 load_dotenv()
 
-# Credentials
+# --- Config ---
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
 ID_INSTANCE = os.getenv("idInstance")
-API_TOKEN_INSTANCE = os.getenv("apiTokenInstance")
-CHAT_NUM = os.getenv("CHAT_NUM")
-CHAT_ID = f"{CHAT_NUM}@c.us"
-
-def send_whatsapp_message(text):
-    url = f"https://api.green-api.com{ID_INSTANCE}/sendMessage/{API_TOKEN_INSTANCE}"
-    payload = {"chatId": CHAT_ID, "message": text}
-    try:
-        response = requests.post(url, json=payload)
-        return response.status_code == 200
-    except Exception as e:
-        print(f"Green API Error: {e}")
-        return False
-
-async def handle_insert(payload, supabase: AsyncClient):
-    # Data is inside the 'new' key for INSERT events
-    new_row = payload.get('new', {})
-    row_id = new_row.get('id')
+API_TOKEN = os.getenv("apiTokenInstance")
+CONTACT_NUMBER = os.getenv("CHAT_NUM") # The number you want to send messages to (for testing)
+def send_whatsapp(number, text):
+    print(f"📤 Sending to {number}: {text}")
+    """Sends a message via Green-API (Keep this sync or make it async)"""
+    url = f"https://7103.api.greenapi.com/waInstance{ID_INSTANCE}/sendMessage/{API_TOKEN}"
+    if "@c.us" not in str(number):
+        number = f"{number}@c.us"
     
-    if not row_id:
+    payload = {"chatId": number, "message": text}
+    headers = {'Content-Type': 'application/json'}
+    
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        print(f"🚀 Sent to {number}: {response.status_code}")
+    except Exception as e:
+        print(f"❌ Green-API Error: {e}")
+
+# The callback must be a regular function, but we can trigger logic from it
+def on_insert(payload):
+    # 1. Debug: See exactly what Supabase sent
+    
+    
+    # 2. Extract the record. Python SDK typically uses 'record' for INSERTs
+    # but some versions/configs use 'new'
+    print(f"DEBUG - Full Payload: {payload}")
+    
+    # 1. Access the 'data' key first, then 'record'
+    data = payload.get('data', {})
+    new_record = data.get('record') or data.get('new')
+
+    if not new_record:
+        print("❌ Error: Still couldn't find the record. Check the DEBUG print above.")
         return
 
-    message_text = (
-        "*NEW MESSAGE FROM CARPOOL-BOT*\n\n"
-        f"From: {new_row.get('sender_number')}\n"
-        f"Type: {new_row.get('type')}\n"
-        f"Source: {new_row.get('source')}\n"
-        f"Destination: {new_row.get('destination')}\n"
-        f"Time: {new_row.get('time')}\n"
-        f"Seats: {new_row.get('seats')}"
-    )
+    # 3. Use the exact column names from your Supabase table
+    # Example: If your DB column is 'source_loc', use new_record.get('source_loc')
+    car_type = new_record.get('type', 'Unknown')
+    src = new_record.get('source', 'Unknown')
+    dest = new_record.get('destination', 'Unknown')
+    tm = new_record.get('time', 'Not specified')
+    st = new_record.get('seats', '0')
+    sender = new_record.get('sender_num', 'Unknown')
 
-    print(f"Processing row {row_id}...")
-
-    if send_whatsapp_message(message_text):
-        # Update row status to True
-        await supabase.table("carpool_entries").update({"status": True}).eq("id", row_id).execute()
-        print(f"Success: Row {row_id} updated.")
+    # ... (Your WhatsApp sending logic)
+    message = f"🚗 New Carpool Alert!\nType: {car_type}\nFrom: {src}\nTo: {dest}\nTime: {tm}\nSeats: {st}Contact: {sender}"
+    send_whatsapp(CONTACT_NUMBER, message)
+    
 
 async def main():
-    # 1. Initialize Async Client
-    supabase: AsyncClient = await create_async_client(SUPABASE_URL, SUPABASE_KEY)
-
-    # 2. Setup the channel
-    channel = supabase.channel("db-changes")
+    # Initialize the ASYNC client
+    supabase: AsyncClient = await acreate_client(SUPABASE_URL, SUPABASE_KEY)
     
-    # 3. Use the correct method: on_postgres_changes
-    channel.on_postgres_changes(
+    print("👂 Listener is starting...")
+    
+    # Set up the channel
+    channel = supabase.channel('db-changes')
+    await channel.on_postgres_changes(
         event="INSERT",
         schema="public",
-        table="carpool_entries",
-        callback=lambda payload: asyncio.create_task(handle_insert(payload, supabase))
-    )
-    
-    # 4. Subscribe to start receiving events
-    await channel.subscribe()
+        table="carpool_entries", # <--- CHANGE THIS
+        callback=on_insert
+    ).subscribe()
 
-    print("Listener active. Waiting for new carpool entries...")
-    
+    # Keep the script running
     try:
         while True:
             await asyncio.sleep(1)
-    except KeyboardInterrupt:
-        print("\nStopping...")
+    except asyncio.CancelledError:
+        print("Stopping...")
 
 if __name__ == "__main__":
     asyncio.run(main())
