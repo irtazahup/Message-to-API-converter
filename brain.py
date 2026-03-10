@@ -18,8 +18,10 @@ def extract_carpool_info(user_message):
     3. 'destination': Ending point (use 'Unknown' if not mentioned).
     4. 'time': The departure time mentioned.
     5. 'seats': Number of seats offered or needed (default to 1 if not specified).
+    
     follow the format strictly , in order and do not include any additional text.
     Return ONLY the JSON object. No conversational text.
+    Note: if the above fields are not mentioned in the message, send a text -> "Not important"
     """
 
     chat_completion = client.chat.completions.create(

@@ -28,9 +28,11 @@ def whatsapp_webhook():
             try:
                 # Use your existing logic here
                 raw_ai_output = extract_carpool_info(message_text)
-                save_to_supabase(raw_ai_output, sender_number)
-                # ... save to supabase ...
-                print("🚀 Successfully processed!")
+                if raw_ai_output.strip() != "Not important":
+                    
+                    save_to_supabase(raw_ai_output, sender_number)
+                    # ... save to supabase ...
+                    print("🚀 Successfully processed!")
             except Exception as ai_err:
                 print(f"❌ AI Error: {ai_err}")
         else:

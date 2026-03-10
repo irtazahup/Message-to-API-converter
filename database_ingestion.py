@@ -10,7 +10,7 @@ SUPABASE_URL=os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY=os.getenv("SUPABASE_ANON_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
-print(f"Supabase Client Created: {SUPABASE_ANON_KEY}")
+
 
 def save_to_supabase(extracted_data, sender_number):
     sample = json.loads(extracted_data)

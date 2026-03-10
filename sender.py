@@ -11,7 +11,9 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
 ID_INSTANCE = os.getenv("idInstance")
 API_TOKEN = os.getenv("apiTokenInstance")
-CONTACT_NUMBER = os.getenv("CHAT_NUM") # The number you want to send messages to (for testing)
+CONTACT_NUMBER = os.getenv("CHAT_NUM")# The number you want to send messages to (for testing)
+
+
 def send_whatsapp(number, text):
     print(f"📤 Sending to {number}: {text}")
     """Sends a message via Green-API (Keep this sync or make it async)"""
@@ -55,7 +57,7 @@ def on_insert(payload):
     sender = new_record.get('sender_num', 'Unknown')
 
     # ... (Your WhatsApp sending logic)
-    message = f"🚗 New Carpool Alert!\nType: {car_type}\nFrom: {src}\nTo: {dest}\nTime: {tm}\nSeats: {st}Contact: {sender}"
+    message = f"🚗 New Carpool Alert!\nType: {car_type}\nFrom: {src}\nTo: {dest}\nTime: {tm}\nSeats: {st}\nContact: {sender}"
     send_whatsapp(CONTACT_NUMBER, message)
     
 
